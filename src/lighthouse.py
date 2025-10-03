@@ -1,6 +1,7 @@
 import subprocess, json
 from typing import Any
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+from datetime import datetime, timezone
 
 
 class Lighthouse:
@@ -125,6 +126,7 @@ class Lighthouse:
             }
 
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "status": "success",
                 "url": url,
                 "metrics": metrics,

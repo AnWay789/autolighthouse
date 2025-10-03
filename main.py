@@ -7,31 +7,9 @@ from datetime import datetime
 from pathlib import Path
 
 
-def save_json(data: dict, folder: str = "logs", prefix: str = "lighthouse") -> Path:
-    """
-    Сохраняет словарь в JSON-файл с датой и временем в названии.
-    
-    Args:
-        :param data: dict - данные для сохранения
-        :param folder: str - папка для логов
-        :param prefix: str - префикс в имени файла
-    Returns:    
-        :return: Path - путь к сохранённому файлу
-    """
-    # Папка для логов (создаст если нет)
-    path = Path(folder)
-    path.mkdir(parents=True, exist_ok=True)
-
-    # Имя файла: prefix_2025-10-01_12-30-45.json
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{prefix}_{timestamp}.json"
-    file_path = path / filename
-
-    # Запись в файл
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    return file_path
+def log_json(data: dict, filename: str = "logs.jsonl"):
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
 def start_lighthouse(urls: list[str]):
     lighthouse = Lighthouse()
@@ -53,10 +31,10 @@ def ELK(urls: list[str]):
     # (наверное) ТУТ должна быть запись в ELK
     # ниже просто затычка которая сохраняет файлы с логами по папкам создавая json'ы
     for stat in stats_without_header:
-        save_json(stat, folder='logs/with_header')
+        log_json(stat, "with_h.jsonl")
 
     for stat in stats_with_header:
-        save_json(stat, folder='logs/without_headers')
+        log_json(stat, "without_h.jsonl")
 
     # --- вывод    
     json_without_header = json.dumps(stats_without_header, ensure_ascii=False, indent=2)
