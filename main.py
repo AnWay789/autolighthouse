@@ -1,60 +1,54 @@
 #from classic.scheduler import Scheduler
+from classic.scheduler import Scheduler
 from src.lighthouse import Lighthouse
-import json
-
-import json
-from datetime import datetime
-from pathlib import Path
-
+from src.config import Config
+from src.loger import log_call, log_msg, LogLevel
+import json, httpx, os, dotenv
 
 def log_json(data: dict, filename: str = "logs.jsonl"):
     with open(filename, "a", encoding="utf-8") as f:
         f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
-def start_lighthouse(urls: list[str]):
-    lighthouse = Lighthouse()
-    
-    stats_without_header = []
-    stats_with_header = []
+@log_call
+def start_lighthouse(metadata: dict, urls: list[str], header: dict):
+    log_msg("Запускаем lighthouse...",LogLevel.INFO.value)
+    lh = Lighthouse()
 
+    results = []
     for url in urls:
-        stats_without_header.append(lighthouse.run(url=url))
-
-    for url in urls:
-        stats_with_header.append(lighthouse.run(url=url, header=True))
+        result = lh.run(url=url,
+            metadata=metadata,
+            header=header)
+        
+        results.append(result)
     
-    return stats_without_header, stats_with_header
+    #post_in_ELK(results)
+    for res in results:
+        log_json(res)
 
-def ELK(urls: list[str]):
-    stats_without_header, stats_with_header = start_lighthouse(urls)
-    
-    # (наверное) ТУТ должна быть запись в ELK
-    # ниже просто затычка которая сохраняет файлы с логами по папкам создавая json'ы
-    for stat in stats_without_header:
-        log_json(stat, "with_h.jsonl")
+@log_call
+def post_in_ELK(results: list):
+    log_msg("Отправляем в елку логи...",LogLevel.INFO.value)
+    dotenv.load_dotenv()
+    url = "https://10.222.0.3:9200/vm-logs/_doc/"
+    for result in results:
+        with httpx.Client() as client:
+            auth = ("fluent_bit_system", f"{os.getenv("ELK_AUTH")}")
+            header = {"Content-Type" : "application/json"}
+            data = result
+            resp = client.post(url=url, headers=header, json=data, auth=auth)
 
-    for stat in stats_with_header:
-        log_json(stat, "without_h.jsonl")
-
-    # --- вывод    
-    json_without_header = json.dumps(stats_without_header, ensure_ascii=False, indent=2)
-    json_with_header = json.dumps(stats_with_header, ensure_ascii=False, indent=2)
-
-    print(f"{json_without_header}\n\n\n{json_with_header}")
-
+@log_call
 def get_lighthouse_stats():
-    #sh = Scheduler()
-
-    url_for_test = ["https://example.com"]
-
-    urls: list[str] = [
-        "https://polza.ru/",
-        "https://polza.ru/catalog/lekarstvennye-sredstva/",
-        "https://polza.ru/catalog/flebodia-600-tabletki-pokryt-plen-ob-600-mg-60-sht_13720/"
-    ]
-
-    ELK(url_for_test)
+    config = Config()
+    configs = config.get_lighthouse_configs()
+    for cfg in configs:
+        start_lighthouse(metadata=cfg.metadata, 
+                         urls=cfg.urls, 
+                         header=cfg.headers if cfg.headers else {})
 
 
 if __name__ == "__main__":
-    get_lighthouse_stats()
+    scheduler = Scheduler()
+    scheduler.by_cron('*/1 * * * *', get_lighthouse_stats)
+    scheduler.run()

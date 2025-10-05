@@ -1,5 +1,6 @@
-import subprocess, json
+import subprocess, json, tempfile, os
 from typing import Any
+from src.loger import log_call, log_msg, LogLevel
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from datetime import datetime, timezone
 
@@ -31,6 +32,7 @@ class Lighthouse:
             (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError)
         )
     )
+    @log_call
     def _run_once(self, cmd: list[str], timeout_sec: int) -> dict[str, Any]:
         """Одиночный запуск lighthouse (с ретраями от tenacity)."""
         lighthouse_stats = subprocess.run(
@@ -38,21 +40,22 @@ class Lighthouse:
         )
         return json.loads(lighthouse_stats.stdout)
 
+    @log_call
     def run(
         self,
         url: str,
+        metadata : dict[str, Any] = {},
         timeout_sec: int = 240,
-        header: bool = False,
-        path_to_header_json: str = "headers.json",
+        header: dict = {},
     ) -> dict[str, Any]:
         """
-        Запускает команду lighthouse для получения статистики
+        Обертка для запуска команды lighthouse (с retry) для получения статистики.
 
         Args:
             url(str): ссылка на ресурс
+            metadata(dict): Поля которые будут добавлены к результирующему json
             timeout_sec(int): таймаут для команды в секундах
-            header(bool): отправлять или не отправлять header. (Может вляиять на lighthouse статистику)
-            path_to_header_json(str):
+            header(dict): Хэдер с которым будет работать lighthouse
         Returns:
             dict: json ответ lighthouse с статистикой.
                 - Если произойдет какая либо ошибка - вернет валидный JSON с ошибкой
@@ -78,6 +81,8 @@ class Lighthouse:
                 * lcp → Largest Contentful Paint (в млс и сек)
                 * cls → Cumulative Layout Shift
         """
+        
+        
         # _____________________________________________________Пояснялка к команде:
         # --quiet -→ что бы не сам lighthouse не срал в консоль
         # --chrome-flags= --headless -→ что бы не запускал окно браузера
@@ -107,10 +112,16 @@ class Lighthouse:
             "--only-audits=first-contentful-paint,total-blocking-time,speed-index,largest-contentful-paint,cumulative-layout-shift",
         ]
 
-        if header:
-            base_cmd.append(f"--extra-headers={path_to_header_json}")
+        if header != {}:
+            with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as tmp:
+                json.dump(header, tmp)
+                tmp_path = tmp.name
+                
+                log_msg("Создали временный файл с header", LogLevel.INFO.value)
+            base_cmd.append(f"--extra-headers={tmp_path}")
 
         try:
+
             data = self._run_once(base_cmd, timeout_sec)
 
             metrics = {
@@ -124,10 +135,11 @@ class Lighthouse:
                 "lcp_s": round(lcp / 1000, 2) if lcp is not None else None,
                 "cls": self._safe_metric(data["audits"], "cumulative-layout-shift"),
             }
-
+            
             return {
                 "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "status": "success",
+                "metadata" : metadata,
                 "url": url,
                 "metrics": metrics,
                 "error": None,
@@ -136,41 +148,55 @@ class Lighthouse:
 
         except subprocess.CalledProcessError as eCPE:
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "url": url,
                 "status": "error",
+                "metadata" : metadata,
                 "metrics": None,
                 "error": "Lighthouse failed",
                 "message": f"stderr: {eCPE.stderr.strip()[:500]} | stdout: {eCPE.stdout.strip()[:500]}",
             }
         except subprocess.TimeoutExpired as eTE:
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "url": url,
                 "status": "error",
+                "metadata" : metadata,
                 "metrics": None,
                 "error": "Lighthouse timeout",
                 "message": str(eTE),
             }
         except FileNotFoundError as eFNF:
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "url": url,
                 "status": "error",
+                "metadata" : metadata,
                 "metrics": None,
                 "error": "Lighthouse binary not found",
                 "message": str(eFNF),
             }
         except json.JSONDecodeError as eJSDE:
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "url": url,
                 "status": "error",
+                "metadata" : metadata,
                 "metrics": None,
                 "error": "Invalid JSON from Lighthouse",
                 "message": str(eJSDE),
             }
         except Exception as e:
             return {
+                "@timestamp" : datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), # время в формате 2025-10-02T18:10:45.940Z для елки
                 "url": url,
                 "status": "error",
+                "metadata" : metadata,
                 "metrics": None,
                 "error": "Unexpected exception",
                 "message": str(e),
             }
+        finally:
+            if header != {}:
+                os.remove(tmp_path)
+                log_msg("Удалили временный файл с header", LogLevel.INFO.value)
