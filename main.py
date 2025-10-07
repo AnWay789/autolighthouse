@@ -26,8 +26,8 @@ def start_lighthouse(metadata: dict, urls: list[str], header: dict):
 @log_call
 def post_in_ELK(results: list):
     log_msg("Отправляем в елку логи...",LogLevel.INFO.value)
-    dotenv.load_dotenv()
-    url = "https://10.222.0.3:9200/vm-logs/_doc/"
+    dotenv.load_dotenv("creds.env")
+    url = "https://10.222.0.3:9200/runner-vm-bots-logs/_doc/"
     for result in results:
         with httpx.Client(verify=False) as client:
             auth = ("fluent_bit_system", f"{os.getenv("ELK_AUTH")}")
@@ -49,4 +49,5 @@ def get_lighthouse_stats():
 if __name__ == "__main__":
     scheduler = Scheduler()
     scheduler.by_cron('*/10 * * * *', get_lighthouse_stats)
-    scheduler.run()
+    #scheduler.run()
+    get_lighthouse_stats()
