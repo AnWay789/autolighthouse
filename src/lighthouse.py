@@ -114,6 +114,7 @@ class Lighthouse:
         ]
 
         try:
+            tmp_path = None
             if header != {}:
                 with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as tmp:
                     json.dump(header, tmp)
