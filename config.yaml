@@ -42,7 +42,7 @@ configs:
   # ----------------------------------------------------------------
   - metadata: # То что будет в логах
       project: nuxt
-      page_type: Католог - Лекарственные средства
+      page_type: Католог
     urls: # ссылки
       - https://polza.ru/catalog/lekarstvennye-sredstva/
     headers: # хедер который будет применятся к запросам на urlы
@@ -50,7 +50,7 @@ configs:
   
   - metadata: # То что будет в логах
       project: bitrix
-      page_type: Католог - Лекарственные средства
+      page_type: Католог
     urls: # ссылки
       - https://polza.ru/catalog/lekarstvennye-sredstva/
     headers: # хедер который будет применятся к запросам на urlы
@@ -58,7 +58,7 @@ configs:
   # ----------------------------------------------------------------
   - metadata: # То что будет в логах
       project: nuxt
-      page_type: Католог - Товар
+      page_type: Карточка товара
     urls: # ссылки
       - https://polza.ru/catalog/flebodia-600-tabletki-pokryt-plen-ob-600-mg-60-sht_13720/
     headers: # хедер который будет применятся к запросам на urlы
@@ -66,7 +66,7 @@ configs:
   
   - metadata: # То что будет в логах
       project: bitrix
-      page_type: Католог - Товар
+      page_type: Карточка товара
     urls: # ссылки
       - https://polza.ru/catalog/flebodia-600-tabletki-pokryt-plen-ob-600-mg-60-sht_13720/
     headers: # хедер который будет применятся к запросам на urlы
