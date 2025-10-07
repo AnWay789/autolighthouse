@@ -119,7 +119,7 @@ class Lighthouse:
                     json.dump(header, tmp)
                     tmp_path = tmp.name
                     
-                    log_msg("Создали временный файл с header", LogLevel.INFO.value)
+                    log_msg(f"Создали временный файл с header, путь: {tmp_path}", LogLevel.INFO.value)
                 base_cmd.append(f"--extra-headers={tmp_path}")
 
 
