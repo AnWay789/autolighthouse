@@ -201,6 +201,6 @@ class Lighthouse:
             if tmp_path and os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
-                    log_msg("Удалили временный файл с header", LogLevel.INFO.value)
+                    log_msg(f"Удалили временный файл с header, путь {tmp_path}", LogLevel.INFO.value)
                 except OSError as e:
                     log_msg(f"Не удалось удалить временный файл {tmp_path}: {e}", LogLevel.WARN.value)
