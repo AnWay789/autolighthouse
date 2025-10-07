@@ -107,7 +107,7 @@ class Lighthouse:
             "lighthouse",
             url,
             "--quiet",
-            "--chrome-flags=--headless --disable-cache --disable-application-cache --disable-dev-shm-usage --disable-gpu --no-sandbox --disable-setuid-sandbox --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-default-apps --disable-extensions --disable-translate --disable-features=TranslateUI --aggressive-cache-discard --memory-pressure-off",
+            "--chrome-flags=--headless --disable-cache --disable-application-cache --disable-dev-shm-usage --disable-gpu --no-sandbox --disable-setuid-sandbox --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-translate --disable-features=TranslateUI --aggressive-cache-discard --memory-pressure-off",
             "--output=json",
             "--output-path=stdout",
             "--only-audits=first-contentful-paint,total-blocking-time,speed-index,largest-contentful-paint,cumulative-layout-shift",
