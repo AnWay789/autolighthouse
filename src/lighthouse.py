@@ -32,7 +32,6 @@ class Lighthouse:
             (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError)
         )
     )
-    @log_call
     def _run_once(self, cmd: list[str], timeout_sec: int) -> dict[str, Any]:
         """Одиночный запуск lighthouse (с ретраями от tenacity)."""
         lighthouse_stats = subprocess.run(

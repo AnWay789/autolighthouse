@@ -1,4 +1,3 @@
-#from classic.scheduler import Scheduler
 from classic.scheduler import Scheduler
 from src.lighthouse import Lighthouse
 from src.config import Config
@@ -22,9 +21,7 @@ def start_lighthouse(metadata: dict, urls: list[str], header: dict):
         
         results.append(result)
     
-    #post_in_ELK(results)
-    for res in results:
-        log_json(res)
+    post_in_ELK(results)
 
 @log_call
 def post_in_ELK(results: list):
@@ -32,11 +29,12 @@ def post_in_ELK(results: list):
     dotenv.load_dotenv()
     url = "https://10.222.0.3:9200/vm-logs/_doc/"
     for result in results:
-        with httpx.Client() as client:
+        with httpx.Client(verify=False) as client:
             auth = ("fluent_bit_system", f"{os.getenv("ELK_AUTH")}")
             header = {"Content-Type" : "application/json"}
             data = result
             resp = client.post(url=url, headers=header, json=data, auth=auth)
+            log_msg(f"Status: {resp.status_code}\n{resp.json()}", LogLevel.DEBUG.value)
 
 @log_call
 def get_lighthouse_stats():
@@ -50,5 +48,5 @@ def get_lighthouse_stats():
 
 if __name__ == "__main__":
     scheduler = Scheduler()
-    scheduler.by_cron('*/1 * * * *', get_lighthouse_stats)
+    scheduler.by_cron('*/10 * * * *', get_lighthouse_stats)
     scheduler.run()
