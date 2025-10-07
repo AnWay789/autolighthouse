@@ -107,21 +107,21 @@ class Lighthouse:
             "lighthouse",
             url,
             "--quiet",
-            "--chrome-flags=--headless --disable-cache",
+            "--chrome-flags=--headless --disable-cache --disable-application-cache --disable-dev-shm-usage --disable-gpu --no-sandbox --disable-setuid-sandbox --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-default-apps --disable-extensions --disable-translate --disable-features=TranslateUI --aggressive-cache-discard --memory-pressure-off",
             "--output=json",
             "--output-path=stdout",
             "--only-audits=first-contentful-paint,total-blocking-time,speed-index,largest-contentful-paint,cumulative-layout-shift",
         ]
 
-        if header != {}:
-            with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as tmp:
-                json.dump(header, tmp)
-                tmp_path = tmp.name
-                
-                log_msg("Создали временный файл с header", LogLevel.INFO.value)
-            base_cmd.append(f"--extra-headers={tmp_path}")
-
         try:
+            if header != {}:
+                with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as tmp:
+                    json.dump(header, tmp)
+                    tmp_path = tmp.name
+                    
+                    log_msg("Создали временный файл с header", LogLevel.INFO.value)
+                base_cmd.append(f"--extra-headers={tmp_path}")
+
 
             data = self._run_once(base_cmd, timeout_sec)
 
@@ -198,6 +198,9 @@ class Lighthouse:
                 "message": str(e),
             }
         finally:
-            if header != {}:
-                os.remove(tmp_path)
-                log_msg("Удалили временный файл с header", LogLevel.INFO.value)
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                    log_msg("Удалили временный файл с header", LogLevel.INFO.value)
+                except OSError as e:
+                    log_msg(f"Не удалось удалить временный файл {tmp_path}: {e}", LogLevel.WARN.value)
