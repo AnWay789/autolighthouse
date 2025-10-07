@@ -29,8 +29,10 @@ class Lighthouse:
         stop=stop_after_attempt(3),               # максимум 3 попытки
         wait=wait_fixed(2),                       # между ними 2 секунды пауза
         retry=retry_if_exception_type(            # ретраим только на этих типах ошибок
-            (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError)
-        )
+            (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError),
+        
+        ),
+        reraise=True 
     )
     def _run_once(self, cmd: list[str], timeout_sec: int) -> dict[str, Any]:
         """Одиночный запуск lighthouse (с ретраями от tenacity)."""

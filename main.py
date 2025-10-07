@@ -3,6 +3,7 @@ from src.lighthouse import Lighthouse
 from src.config import Config
 from src.loger import log_call, log_msg, LogLevel
 import json, httpx, os, dotenv
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 def log_json(data: dict, filename: str = "logs.jsonl"):
     with open(filename, "a", encoding="utf-8") as f:
@@ -24,6 +25,10 @@ def start_lighthouse(metadata: dict, urls: list[str], header: dict):
     post_in_ELK(results)
 
 @log_call
+@retry(
+        stop=stop_after_attempt(3),               # максимум 3 попытки
+        wait=wait_fixed(2),                       # между ними 2 секунды пауза
+    )
 def post_in_ELK(results: list):
     log_msg("Отправляем в елку логи...",LogLevel.INFO.value)
     dotenv.load_dotenv("creds.env")
