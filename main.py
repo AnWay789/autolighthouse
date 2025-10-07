@@ -49,5 +49,4 @@ def get_lighthouse_stats():
 if __name__ == "__main__":
     scheduler = Scheduler()
     scheduler.by_cron('*/10 * * * *', get_lighthouse_stats)
-    #scheduler.run()
-    get_lighthouse_stats()
+    scheduler.run()
