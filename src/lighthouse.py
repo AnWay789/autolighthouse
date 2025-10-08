@@ -103,11 +103,12 @@ class Lighthouse:
 
         # Возможно будут ошибки из за отсутсвия GPU:
         # Если будут к --chrome-flags добавить → --disable-gpu
+
         base_cmd = [
             "lighthouse",
             url,
             "--quiet",
-            "--chrome-flags=--headless --disable-cache",
+            "--chrome-flags=--headless --disable-cache --user-data-dir=/dev/null",
             "--output=json",
             "--output-path=stdout",
             "--only-audits=first-contentful-paint,total-blocking-time,speed-index,largest-contentful-paint,cumulative-layout-shift",
@@ -204,4 +205,4 @@ class Lighthouse:
                     os.remove(tmp_path)
                     log_msg(f"Удалили временный файл с header, путь {tmp_path}", LogLevel.INFO.value)
                 except OSError as e:
-                    log_msg(f"Не удалось удалить временный файл {tmp_path}: {e}", LogLevel.WARN.value)
+                    log_msg(f"Не удалось удалить временный файл {tmp_path}: {e}", LogLevel.WARN.value)#
